@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 2.9)
-project(knn_model)
-find_package(OpenCV REQUIRED)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
-add_executable(knn_model knn_model.cpp)
-target_link_libraries(knn_model ${OpenCV_LIBS})
