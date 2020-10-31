@@ -1,0 +1,3 @@
+/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/build/CMakeFiles/rebuild_cache.dir
+/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/build/CMakeFiles/knn_model.dir
+/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/build/CMakeFiles/edit_cache.dir

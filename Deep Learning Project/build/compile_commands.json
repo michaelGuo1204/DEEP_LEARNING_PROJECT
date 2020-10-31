@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/build",
+  "command": "/usr/bin/c++   -I\"/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project\" -isystem /usr/local/include -isystem /usr/local/include/opencv  -g   -o CMakeFiles/knn_model.dir/knn_model.cpp.o -c \"/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/knn_model.cpp\"",
+  "file": "/media/bili/L/Bioinformatics/TypeII Diabetes/Deep Learning Project/knn_model.cpp"
+}
+]

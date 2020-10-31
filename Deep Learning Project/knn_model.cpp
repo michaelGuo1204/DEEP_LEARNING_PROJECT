@@ -47,7 +47,8 @@ Case::Case(string label,std::string One_line_data,int status)
 for(int i=0;i<One_line_data.length();i+=4)
 {
    // cout<<Get_number(&data[i])<<endl;
-_Gene_data.push_back(Get_number(&data[i]));
+   int number=Get_number(&data[i]);
+_Gene_data.push_back(number);
 }
     _status=status;
 }
@@ -64,7 +65,7 @@ int main()
     ifstream status_stream;
     ifstream gene_stream;
     char buffer_gene[2900],buffer_status[100];
-    status_stream.open("/media/bili/L/Bioinformatics/TypeII Diabetes/type 2 diabetes Raw Data/all-ids-phe");
+    status_stream.open("/media/bili/L/Bioinformatics/TypeII Diabetes/type 2 diabetes Raw Data/all-ids-phe.txt");
     gene_stream.open("/media/bili/L/Bioinformatics/TypeII Diabetes/type 2 diabetes Raw Data/all-seq");
     vector<Case> input_data;
     if(status_stream.is_open()&&gene_stream.is_open())
@@ -73,23 +74,28 @@ int main()
         {
             string label;int status_num;
             int label_length;
-           memset(buffer_gene,0,2900);
-           memset(buffer_status,0,100);
-           gene_stream.getline(buffer_gene,2900);
-        status_stream.getline(buffer_status,100);
-        string status_str=buffer_status;
-        string gene_str=buffer_gene;
-        label_length=status_str.find("\t");
-        string status_s_str=status_str.substr(0,label_length);
-        string gene_s_str=gene_str.substr(0,label_length);
-        string gene_oneline=gene_str.substr(label_length+2);
-        label=status_s_str;
-        status_num=*(status_str.end()-1)=='\r'?(int)*(status_str.end()-2)-'0':(int)*(status_str.end()-1)-'0';
-        Case _cache_case(label,gene_oneline,status_num);
-        input_data.push_back(_cache_case);
-        }
-        status_stream.close();
-        gene_stream.close();
+            memset(buffer_gene,0,2900);
+            memset(buffer_status,0,100);
+            gene_stream.getline(buffer_gene,2900);
+            status_stream.getline(buffer_status,100);
+            string status_str=buffer_status;
+            string gene_str=buffer_gene;
+            label_length=status_str.find("\t");
+            string status_s_str=status_str.substr(0,label_length);
+            string gene_s_str=gene_str.substr(0,label_length);
+            string gene_oneline=gene_str.substr(label_length+2);
+            if(status_s_str!=gene_s_str){continue;}
+            if(status_s_str.length()>8&&gene_s_str.length()>8){
+                cout<<"gogogo"<<endl;
+                continue;
+                }
+            label=status_s_str;
+            status_num=*(status_str.end()-1)=='\r'?(int)*(status_str.end()-2)-'0':(int)*(status_str.end()-1)-'0';
+            Case _cache_case(label,gene_oneline,status_num);
+            input_data.push_back(_cache_case);
+            }
+            status_stream.close();
+            gene_stream.close();
     }
 
     cv::Mat Sample;
@@ -113,23 +119,28 @@ int main()
         count++;
         }
     }
-    Ptr<KNearest>knn =KNearest::create();
-    knn->setDefaultK(5);
-    knn->setIsClassifier(true);
+    Ptr<ml::SVM>svm =SVM::create();
+    svm->setType(SVM::Types::C_SVC);
+    svm->setKernel(SVM::KernelTypes::LINEAR);
+    svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER,100,1e-6));
     cv::Ptr<cv::ml::TrainData> &&train_set=cv::ml::TrainData::create(Sample,cv::ml::ROW_SAMPLE,label);
+    cv::imshow("a",Test_sample);
+    cv::waitKey(0);
     cout<<"training"<<endl;
-    knn->train(train_set);
-    knn->save("./knn.xml");
-    knn->load("./knn.xml");
+    svm->trainAuto(train_set);
+    svm->save("./knn.xml");
+    svm->load("./knn.xml");
     int current=0;
     count=0;
     for (int i = 0; i < Test_sample.rows; i++)
     {
         Mat test_cache;
         Test_sample.row(i).copyTo(test_cache);
+        //cv::resize(test_cache,test_cache,Size(1,722),(0,0),(0,0),INTER_AREA);
         test_cache.convertTo(test_cache,CV_32FC1);
-        float r=knn->predict(test_cache.reshape(0,1));
-        //cout<<Test_label.at<int>(i,0)<<endl;
+        cout<<test_cache<<endl;
+        float r=svm->predict(test_cache.reshape(0,1));
+        cout<<"There should be"<<Test_label.at<int>(i,0)<<"but there is"<<r<<endl;
         if(((int)r) ==(Test_label.at<int>(i,0)))current++;
         count++;
     }
