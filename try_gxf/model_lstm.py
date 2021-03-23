@@ -1,17 +1,17 @@
 from utils import *
 import tensorflow as tf
-from keras.models import Model, Sequential
-from keras.layers import Input, LSTM, Bidirectional, Dense, Activation
-from keras.layers import RepeatVector, Dot, Concatenate, SimpleRNN
-from keras.layers import Reshape, Lambda, Dropout
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, LSTM, Bidirectional, Dense, Activation
+from tensorflow.keras.layers import RepeatVector, Dot, Concatenate, SimpleRNN
+from tensorflow.keras.layers import Reshape, Lambda, Dropout
 # from keras.initializers import glorot_uniform
-from keras.optimizers import Adam
-from keras import backend as K
-from attention import Attention
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Attention
 
 # define constants, most are hyper parameters
 latent_units = 256  # literature optimal value
-Tx = 1440  # length of input
+Tx = 1444  # length of input
 na = 32  # units in LSTM
 ns = 64  # units in post attention RNN
 
@@ -40,7 +40,7 @@ def softmax(x, axis=1):
 
 
 # Define shared layers as **global variables**
-repeator = RepeatVector(Tx, name='repeat hidden')
+repeator = RepeatVector(Tx, name='repeat_hidden')
 concatenator = Concatenate(axis=-1)
 # the two densors are all used to train for alpha, not in the main path
 densor1 = Dense(10, activation="tanh", name='dense1')
@@ -49,8 +49,8 @@ activator = Activation(softmax,
                        name='attention_weights')  # We are using a custom softmax(axis = 1) loaded in this notebook
 dotor = Dot(axes=1)
 # after attention
-after_attention_layer = SimpleRNN(ns, return_state=True)  #TODO: na is another hyper parameter...
-out_encoder_layer = Dense(latent_units, activation=softmax, name='output encoder')
+after_attention_layer = SimpleRNN(ns, return_state=False)  #TODO: na is another hyper parameter...
+out_encoder_layer = Dense(latent_units, activation=softmax, name='output_encoder')
 
 
 def one_step_attention_encoder(a, s_prev):
@@ -68,7 +68,8 @@ def one_step_attention_encoder(a, s_prev):
 
     # Use repeator to repeat s_prev (Tx times) to be of shape (m, Tx, n_s) so that you can concatenate it
     # with all hidden states "a"
-    s_prev = repeator(s_prev)
+    a = repeator(a)
+    s_prev =repeator(s_prev)
     # Use concatenator to concatenate a and s_prev on the last axis (≈ 1 line)
     concat = concatenator([a, s_prev])  # (m, Tx, 2*na+ns)
     # Use densor1 to propagate concat through a small fully-connected neural network to compute the "intermediate
@@ -90,7 +91,7 @@ def model2_encoder(input_shape, latent_units=256):
     # preparations
     m, Tx, input_cls = input_shape  # Tx=1440, cls=5
     X = Input(shape=(Tx, input_cls), name='input')  # we don't assign the number of samples in the input
-    s0 = Input(shape=(ns,), name='post attention hidden')  # custom initial value (I don't know why...)
+    s0 = Input(shape=(ns,), name='post_attention_hidden')  # custom initial value (I don't know why...)
     post_attn_hidden = s0  # # the hidden state of the post attention layer
     output = []  # prepare a list for 256 outputs
 
@@ -102,16 +103,16 @@ def model2_encoder(input_shape, latent_units=256):
         # output all calculated attention vectors, which have been linear combined
         context = one_step_attention_encoder(encoder_lstm, post_attn_hidden)  # (m, Tx, 2*na) -> (m, 1, 2*na)
         # input the attention vectors to a simple RNN, and return sequence
-        post_attn_hidden = after_attention_layer(context, inputs=post_attn_hidden)  # (m, 1, 2*na) -> (m, 1, ns)
+        post_attn_hidden = after_attention_layer(context)  # (m, 1, 2*na) -> (m, 1, ns)
         # input the hidden state into dense layer to get an element of the latent representation
         out = out_encoder_layer(post_attn_hidden)  # (m, 1, ns) -> (m, 1, 1)
         output.append(out)
-    model = Model(inputs=[X, s0], outputs=np.array(output, shape=(m, latent_units)))
+    model = Model(inputs=[X, s0], outputs=np.array(output).resize(m, latent_units))
     return model
 
 
 # Define shared layers again for the decoder
-repeator2 = RepeatVector(latent_units, name='repeat hidden')
+repeator2 = RepeatVector(latent_units, name='repeat_hidden')
 concatenator2 = Concatenate(axis=-1)
 # the two densors are all used to train for alpha, not in the main path
 densor1_2 = Dense(10, activation="tanh", name='dense1')
@@ -121,7 +122,7 @@ activator2 = Activation(softmax,
 dotor2 = Dot(axes=1)
 # after attention
 after_attention_layer2 = SimpleRNN(ns, return_state=True)
-out_encoder_layer2 = Dense(Tx, activation=softmax, name='output encoder')
+out_encoder_layer2 = Dense(Tx, activation=softmax, name='output_encoder')
 
 
 def one_step_attention_decoder(a, s_prev):
@@ -140,7 +141,7 @@ def model2_decoder(input_shape, Tx):
     # it's not a good solution because I did not refer to anything but repeated LSTM and attention
     m, latent_units = input_shape  # latent = 256, Tx = 1440
     X = Input(shape=(latent_units))  # input shape=(m, latent_units)
-    s0 = Input(shape=(ns,), name='post attention hidden')
+    s0 = Input(shape=(ns,), name='post_attention_hidden')
     post_attn_hidden = s0
     output = []
 

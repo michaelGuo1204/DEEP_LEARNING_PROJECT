@@ -18,13 +18,13 @@ from model_lstm import *
 
 # %% read files
 # X_onehot will be (m, Tx, num_classes), Y will be 0 or 1
-X, ids = read_files('all-seq')
-Y, _ = read_files('all-ids-phe')
-Y = np.array(Y,dtype='float64')
-X_onehot = seq_to_one_hot(X)
+#X, ids = read_files('../type 2 diabetes Raw Data/all-seq')
+#Y, _ = read_files('../type 2 diabetes Raw Data/all-ids-phe')
+#Y = np.array(Y,dtype='float64')
+#X_onehot = seq_to_one_hot(X)
 # TODO: This step cost much time! Need to improve!
 # solution: save preprocessed data
-np.savez('XY.npz', X_onehot, Y)
+#np.savez('XY.npz', X_onehot, Y)
 
 #%% load processed data to save time
 data = np.load('XY.npz')

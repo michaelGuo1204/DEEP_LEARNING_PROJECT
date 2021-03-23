@@ -1,7 +1,7 @@
 # utilizable functions
 # after changing, we have to rerun it and rerun "import" in main
 import numpy as np
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 
 
 # %% data processing
