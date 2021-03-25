@@ -8,8 +8,9 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.layers import RepeatVector
 from tensorflow.keras.utils import plot_model
-from attention import AttentionWithContext,Addition
-
+from attention import Attention
+from tensorflow.keras.callbacks import ModelCheckpoint
+import os.path
 # generate a sequence of random integers
 def generate_sequence(length, n_unique):
     return [randint(0, n_unique - 1) for _ in range(length)]
@@ -58,8 +59,7 @@ def baseline_model(n_timesteps_in, n_features):
 def attention_model(n_timesteps_in, n_features):
     model = Sequential()
     model.add(LSTM(256, input_shape=(n_timesteps_in, n_features), return_sequences=True))
-    model.add(AttentionWithContext())
-    model.add(Addition())
+    model.add(Attention())
     model.add(RepeatVector(n_timesteps_in))
     model.add(LSTM(256, return_sequences=True))
     model.add(TimeDistributed(Dense(n_features, activation='softmax')))
@@ -70,11 +70,15 @@ def attention_model(n_timesteps_in, n_features):
 # train and evaluate a model, return accuracy
 def train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features):
     # train LSTM
-    for epoch in range(5000):
         # generate new random sequence
-        X, y = get_pair(n_timesteps_in, n_timesteps_out, n_features)
+    X, y = get_pair(n_timesteps_in, n_timesteps_out, n_features)
         # fit model for one epoch on this sequence
-        model.fit(X, y, epochs=1, verbose=0)
+    checkpoint_path = "training_1/cp.ckpt"
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+    cp_callback = ModelCheckpoint(filepath=checkpoint_dir,
+                                  save_weights_only=True,
+                                  verbose=1)
+    model.fit(X, y,epochs=5000, verbose=0,callbacks=[cp_callback])
     # evaluate LSTM
     total, correct = 100, 0
     for _ in range(total):
@@ -93,12 +97,14 @@ n_repeats = 10
 # evaluate encoder-decoder model
 print('Encoder-Decoder Model')
 results = list()
+'''
 for _ in range(n_repeats):
     model = baseline_model(n_timesteps_in, n_features)
     accuracy = train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features)
     results.append(accuracy)
     print(accuracy)
 print('Mean Accuracy: %.2f%%' % (sum(results) / float(n_repeats)))
+'''
 # evaluate encoder-decoder with attention model
 print('Encoder-Decoder With Attention Model')
 results = list()

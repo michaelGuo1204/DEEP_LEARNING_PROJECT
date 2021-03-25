@@ -27,7 +27,7 @@ from model_lstm import *
 #np.savez('XY.npz', X_onehot, Y)
 
 #%% load processed data to save time
-data = np.load('XY.npz')
+data = np.load('../Deep Learning Project/PythonVersion/XY.npz')
 X_onehot = data['arr_0']
 Y = data['arr_1']
 
